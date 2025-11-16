@@ -1,64 +1,47 @@
-# DJS02 – Web Component: Podcast Preview
+## Podcast Preview Web Component
 
-## Overview
+- A reusable Web Component that displays podcast preview cards with a detailed modal view. The component is designed to be stateless and works with data passed through properties or attributes.
 
-In this project, you will build a reusable and encapsulated **custom HTML element** that displays a podcast preview. The component must follow the **Web Component standard**, using `customElements.define()` and should work independently from the main application logic. This component will enhance modularity, promote reuse, and reduce code duplication across the app.
+## Features
 
-The component should be designed to **accept podcast data via attributes or properties**, display relevant UI elements (such as title, cover image, and genres), and **communicate with the main application** through custom events.
+- Display podcast title, image, genres, number of seasons, and last updated date.
+- Click on a podcast card to open a modal with:
+- Larger cover image
+- Podcast title
+- Description of the show
+- Genre tags
+- Last updated date (readable format)
+- List of season titles with the number of episodes
+- Accessible close button and outside-click close functionality
+- Works with dynamic podcast data.
+- Emits a custom event when a podcast is selected for interaction handling.
 
----
+## Usage
 
-## Core Objectives
 
-### Web Component Functionality
+- Add the necessary JavaScript modules to your project for the  data, and app logic.
+- Add a container for podcast cards and modal
+- Create an HTML container where the podcast cards will be rendered, along with a modal container.
+- Register the Web Component
+- The component is registered automatically. You can use <podcast-preview> directly in HTML or dynamically via JavaScript.
 
-- Create a **custom HTML element** using `customElements.define()`.
-- Accept data (cover image, title, genres, number of seasons, and last updated date) **as attributes or properties**.
-- Keep the component **stateless** and reliant on external data provided by the parent.
-- Use **Shadow DOM** for style and logic encapsulation to avoid global conflicts.
-- Trigger a **custom event** when a user interacts with the component (e.g., clicking), so that the parent application can open a modal or take other actions without tightly coupling to the component’s logic.
+## Passing Data
 
----
+- Data can be passed via JavaScript properties (recommended) or HTML attributes.
+- The component accepts fields like id, title, image, genres, seasons, updated, and description.
+- Ensure that the data structure matches the expected format for proper display.
 
-## UI/UX Requirements
+## Handling Events
 
-- The component should render a clean and **visually consistent preview** of each podcast.
-- Display:
-  - Podcast **cover image**
-  - Podcast **title**
-  - **Genre names**
-  - **Number of seasons**
-  - **Last updated** in a human-readable format
-- The component must be **responsive**, and match the overall app design on desktop and mobile.
-- On click, the component must notify the parent app to **open a modal** or navigate to details.
+- The component emits a custom event when a podcast card is clicked.
+- Event name: podcast-select
+- Event detail includes the selected podcast’s ID.
+- Use this event to trigger modal display or other interactions in your app.
 
----
+## Modal Functionality
 
-## Code Quality & Maintainability
-
-- Write clear, consistent, and modular code.
-- Follow **functional and object-oriented programming** patterns.
-- Document major functions using **JSDoc comments** (parameters, return types, etc.).
-- Use consistent **code formatting** across HTML, CSS, and JavaScript.
-
----
-
-## Technical Constraints
-
-- Do **not** use any third-party frameworks for creating the web component.
-- Use **native JavaScript (ES6+)**, HTML, and CSS.
-- No page reloads or navigation.
-- Ensure compatibility with modern browsers.
-
----
-
-## Deliverables
-
-- A working custom Web Component file (e.g., `PodcastPreview.js`).
-- An HTML demo page showcasing the component usage.
-- A `README.md` file with:
-  - How to use and register the component
-  - Instructions for passing data
-  - How to listen for interaction events
-
----
+- Opens when a podcast card is clicked.
+- Displays all relevant details of the podcast.
+- Close the modal using:
+- A dedicated close button
+- Clicking outside the modal content area
