@@ -1,20 +1,11 @@
 /**
  * @module PodcastPreview
  * A reusable Web Component that displays a podcast preview card.
- * 
- * This component is **stateless** and receives all data through attributes.
- * It emits a custom "podcast-selected" event when clicked.
+ *
+ * This component is **stateless** and receives all data through the `data` property.
+ * It emits a custom "podcast-select" event when clicked.
  */
-
 export class PodcastPreview extends HTMLElement {
-  /**
-   * Observed attributes define which values trigger re-rendering.
-   * @returns {string[]}
-   */
-  static get observedAttributes() {
-    return ["title", "image", "genres", "seasons", "updated"];
-  }
-
   constructor() {
     super();
 
@@ -24,21 +15,21 @@ export class PodcastPreview extends HTMLElement {
      */
     this.shadow = this.attachShadow({ mode: "open" });
 
-    // Initial render
-    this.render();
+    /** @type {Object|null} Podcast data object */
+    this._data = null;
   }
 
   /**
-   * Called whenever an observed attribute changes.
-   *
-   * @param {string} name - The attribute that was changed.
-   * @param {string|null} oldValue - Previous value before change.
-   * @param {string|null} newValue - New value assigned.
+   * Data property to pass the podcast object
+   * @type {Object}
    */
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue !== newValue) {
-      this.render();
-    }
+  set data(value) {
+    this._data = value;
+    this.render();
+  }
+
+  get data() {
+    return this._data;
   }
 
   /**
@@ -59,15 +50,15 @@ export class PodcastPreview extends HTMLElement {
   /**
    * Dispatches a custom event so the parent app can handle the click.
    *
-   * @fires PodcastPreview#podcast-selected
+   * @fires PodcastPreview#podcast-select
    */
   emitSelection() {
-    const event = new CustomEvent("podcast-selected", {
-      detail: { id: this.getAttribute("id") },
+    if (!this._data) return;
+    const event = new CustomEvent("podcast-select", {
+      detail: { id: this._data.id },
       bubbles: true,
       composed: true,
     });
-
     this.dispatchEvent(event);
   }
 
@@ -77,11 +68,10 @@ export class PodcastPreview extends HTMLElement {
    * @returns {void}
    */
   render() {
-    const title = this.getAttribute("title") || "Untitled Podcast";
-    const image = this.getAttribute("image") || "";
-    const genres = this.getAttribute("genres") || "Unknown";
-    const seasons = this.getAttribute("seasons") || "0";
-    const updated = this.formatDate(this.getAttribute("updated"));
+    if (!this._data) return;
+
+    const { title, image, genres, seasons, updated } = this._data;
+    const genresText = Array.isArray(genres) ? genres.join(", ") : genres;
 
     this.shadow.innerHTML = `
       <style>
@@ -117,13 +107,13 @@ export class PodcastPreview extends HTMLElement {
       <div class="card">
         <img src="${image}" alt="${title}">
         <h3>${title}</h3>
-        <p><strong>Genres:</strong> ${genres}</p>
+        <p><strong>Genres:</strong> ${genresText}</p>
         <p><strong>Seasons:</strong> ${seasons}</p>
-        <p><strong>Updated:</strong> ${updated}</p>
+        <p><strong>Updated:</strong> ${this.formatDate(updated)}</p>
       </div>
     `;
 
-    // Add event listener to card
+    // Add click listener
     this.shadow.querySelector(".card").onclick = () => this.emitSelection();
   }
 }
