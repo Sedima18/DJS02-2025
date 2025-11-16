@@ -1,35 +1,46 @@
 /**
  * @module PodcastPreview
  * A reusable Web Component that displays a podcast preview card.
- *
- * This component is **stateless** and receives all data through the `data` property.
- * It emits a custom "podcast-select" event when clicked.
+ * 
+ * This component is **stateless** and receives all data through attributes.
+ * It automatically resolves genre IDs to genre names using the provided `genres` array.
+ * Emits a custom "podcast-selected" event when clicked.
  */
+
+import { genres } from "../data.js";
+
 export class PodcastPreview extends HTMLElement {
+  /**
+   * Observed attributes define which values trigger re-rendering.
+   * @returns {string[]}
+   */
+  static get observedAttributes() {
+    return ["id", "title", "image", "genres", "seasons", "updated"];
+  }
+
   constructor() {
     super();
-
     /**  
      * Attach shadow DOM for style and markup encapsulation.
      * @type {ShadowRoot}
      */
     this.shadow = this.attachShadow({ mode: "open" });
 
-    /** @type {Object|null} Podcast data object */
-    this._data = null;
-  }
-
-  /**
-   * Data property to pass the podcast object
-   * @type {Object}
-   */
-  set data(value) {
-    this._data = value;
+    // Initial render
     this.render();
   }
 
-  get data() {
-    return this._data;
+  /**
+   * Called whenever an observed attribute changes.
+   *
+   * @param {string} name - The attribute that was changed.
+   * @param {string|null} oldValue - Previous value before change.
+   * @param {string|null} newValue - New value assigned.
+   */
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue !== newValue) {
+      this.render();
+    }
   }
 
   /**
@@ -48,17 +59,31 @@ export class PodcastPreview extends HTMLElement {
   }
 
   /**
+   * Convert genre IDs to readable genre names
+   * @param {string} genreAttr - Comma-separated string of genre IDs
+   * @returns {string} Comma-separated genre names
+   */
+  getGenreNames(genreAttr) {
+    if (!genreAttr) return "Unknown";
+    const ids = genreAttr.split(",").map(id => parseInt(id.trim()));
+    return genres
+      .filter(g => ids.includes(g.id))
+      .map(g => g.title)
+      .join(", ");
+  }
+
+  /**
    * Dispatches a custom event so the parent app can handle the click.
    *
-   * @fires PodcastPreview#podcast-select
+   * @fires PodcastPreview#podcast-selected
    */
   emitSelection() {
-    if (!this._data) return;
-    const event = new CustomEvent("podcast-select", {
-      detail: { id: this._data.id },
+    const event = new CustomEvent("podcast-selected", {
+      detail: { id: this.getAttribute("id") },
       bubbles: true,
       composed: true,
     });
+
     this.dispatchEvent(event);
   }
 
@@ -68,10 +93,13 @@ export class PodcastPreview extends HTMLElement {
    * @returns {void}
    */
   render() {
-    if (!this._data) return;
+    const title = this.getAttribute("title") || "Untitled Podcast";
+    const image = this.getAttribute("image") || "";
+    const genresAttr = this.getAttribute("genres");
+    const seasons = this.getAttribute("seasons") || "0";
+    const updated = this.formatDate(this.getAttribute("updated"));
 
-    const { title, image, genres, seasons, updated } = this._data;
-    const genresText = Array.isArray(genres) ? genres.join(", ") : genres;
+    const genreNames = this.getGenreNames(genresAttr);
 
     this.shadow.innerHTML = `
       <style>
@@ -107,13 +135,13 @@ export class PodcastPreview extends HTMLElement {
       <div class="card">
         <img src="${image}" alt="${title}">
         <h3>${title}</h3>
-        <p><strong>Genres:</strong> ${genresText}</p>
+        <p><strong>Genres:</strong> ${genreNames}</p>
         <p><strong>Seasons:</strong> ${seasons}</p>
-        <p><strong>Updated:</strong> ${this.formatDate(updated)}</p>
+        <p><strong>Updated:</strong> ${updated}</p>
       </div>
     `;
 
-    // Add click listener
+    // Add event listener to card
     this.shadow.querySelector(".card").onclick = () => this.emitSelection();
   }
 }
