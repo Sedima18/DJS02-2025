@@ -1,99 +1,132 @@
-class PodcastPreview extends HTMLElement {
+/**
+ * @module PodcastPreview
+ * A reusable Web Component that displays a podcast preview card.
+ * 
+ * This component is **stateless** and receives all data through attributes.
+ * It emits a custom "podcast-selected" event when clicked.
+ */
+
+export class PodcastPreview extends HTMLElement {
+  /**
+   * Observed attributes define which values trigger re-rendering.
+   * @returns {string[]}
+   */
+  static get observedAttributes() {
+    return ["title", "image", "genres", "seasons", "updated"];
+  }
+
   constructor() {
     super();
-    this.attachShadow({ mode: "open" });
-  }
 
-  static get observedAttributes() {
-    return ["title", "image", "genres", "seasons", "updated", "description"];
-  }
+    /**  
+     * Attach shadow DOM for style and markup encapsulation.
+     * @type {ShadowRoot}
+     */
+    this.shadow = this.attachShadow({ mode: "open" });
 
-  attributeChangedCallback() {
+    // Initial render
     this.render();
   }
 
-  set data(podcast) {
-    this.setAttribute("title", podcast.title);
-    this.setAttribute("image", podcast.image);
-    this.setAttribute("genres", podcast.genres?.join(", ") || "Unknown");
-    this.setAttribute("seasons", podcast.seasons);
-    this.setAttribute("updated", podcast.updated);
-    this.setAttribute("description", podcast.description);
-    this.setAttribute("id", podcast.id);
+  /**
+   * Called whenever an observed attribute changes.
+   *
+   * @param {string} name - The attribute that was changed.
+   * @param {string|null} oldValue - Previous value before change.
+   * @param {string|null} newValue - New value assigned.
+   */
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue !== newValue) {
+      this.render();
+    }
   }
 
-  formatUpdated(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
+  /**
+   * Converts a timestamp string into a readable date format.
+   *
+   * @param {string} dateStr - Date string (ISO).
+   * @returns {string} Human-readable formatted date.
+   */
+  formatDate(dateStr) {
+    if (!dateStr) return "Unknown";
+    return new Date(dateStr).toLocaleDateString(undefined, {
+      year: "numeric",
       month: "short",
       day: "numeric",
-      year: "numeric",
     });
   }
 
-  render() {
-    const title = this.getAttribute("title") || "";
-    const image = this.getAttribute("image") || "";
-    const genres = this.getAttribute("genres") || "";
-    const seasons = this.getAttribute("seasons") || "";
-    const updated = this.getAttribute("updated") || "";
-    const description = this.getAttribute("description") || "";
+  /**
+   * Dispatches a custom event so the parent app can handle the click.
+   *
+   * @fires PodcastPreview#podcast-selected
+   */
+  emitSelection() {
+    const event = new CustomEvent("podcast-selected", {
+      detail: { id: this.getAttribute("id") },
+      bubbles: true,
+      composed: true,
+    });
 
-    this.shadowRoot.innerHTML = `
+    this.dispatchEvent(event);
+  }
+
+  /**
+   * Renders the component UI inside Shadow DOM.
+   *
+   * @returns {void}
+   */
+  render() {
+    const title = this.getAttribute("title") || "Untitled Podcast";
+    const image = this.getAttribute("image") || "";
+    const genres = this.getAttribute("genres") || "Unknown";
+    const seasons = this.getAttribute("seasons") || "0";
+    const updated = this.formatDate(this.getAttribute("updated"));
+
+    this.shadow.innerHTML = `
       <style>
-        :host { display:block; cursor:pointer; }
         .card {
-          background:#1f2937; 
-          border-radius:12px;
-          overflow:hidden;
-          color:white;
-          box-shadow:0 2px 8px rgba(0,0,0,0.3);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          width: 100%;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          padding: 12px;
+          cursor: pointer;
+          transition: transform 0.2s, box-shadow 0.2s;
         }
         .card:hover {
-          transform: translateY(-4px);
-          box-shadow:0 6px 20px rgba(0,0,0,0.4);
+          transform: scale(1.02);
+          box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         }
-        img { width:100%; height:180px; object-fit:cover; }
-        .info { padding:12px; }
-        .title { font-weight:bold; font-size:1rem; margin-bottom:4px; }
-        .description { font-size:0.85rem; opacity:0.8; margin-bottom:6px; }
-        .meta { font-size:0.8rem; opacity:0.7; margin-bottom:6px; }
-        .genres { display:flex; flex-wrap:wrap; gap:4px; }
-        .genre-badge {
-          background:#374151;
-          padding:2px 8px;
-          border-radius:9999px;
-          font-size:0.7rem;
+        img {
+          width: 100%;
+          height: auto;
+          border-radius: 6px;
+          margin-bottom: 10px;
+        }
+        h3 {
+          font-size: 16px;
+          margin: 6px 0;
+        }
+        p {
+          font-size: 14px;
+          margin: 4px 0;
+          color: #333;
         }
       </style>
+
       <div class="card">
-        <img src="${image}" alt="Cover for ${title}">
-        <div class="info">
-          <div class="title">${title}</div>
-          <div class="description">${description}</div>
-          <div class="meta">${seasons} season(s) • Updated ${this.formatUpdated(updated)}</div>
-          <div class="genres">
-            ${genres.split(",").map(g => `<span class="genre-badge">${g.trim()}</span>`).join("")}
-          </div>
-        </div>
+        <img src="${image}" alt="${title}">
+        <h3>${title}</h3>
+        <p><strong>Genres:</strong> ${genres}</p>
+        <p><strong>Seasons:</strong> ${seasons}</p>
+        <p><strong>Updated:</strong> ${updated}</p>
       </div>
     `;
 
-    this.shadowRoot.querySelector(".card").onclick = () => {
-      this.dispatchEvent(
-        new CustomEvent("podcast-select", {
-          detail: { id: this.getAttribute("id") },
-          bubbles: true,
-          composed: true,
-        })
-      );
-    };
-  }
-
-  connectedCallback() {
-    this.render();
+    // Add event listener to card
+    this.shadow.querySelector(".card").onclick = () => this.emitSelection();
   }
 }
 
+// Register the custom element
 customElements.define("podcast-preview", PodcastPreview);
